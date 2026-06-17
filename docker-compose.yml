@@ -1,0 +1,144 @@
+name: tablero-pro
+
+services:
+  # ─── Database (solo en desarrollo) ───────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: tablero-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-tablero}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tablero_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-tablero_pro}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tablero}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tablero-network
+
+  # ─── API Gateway ─────────────────────────────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: tablero-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - web
+      - auth-service
+      - projects-service
+      - tasks-service
+      - notifications-service
+    networks:
+      - tablero-network
+
+  # ─── Frontend ────────────────────────────────────────────────────────────────
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: tablero-web
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_APP_URL=http://localhost
+    volumes:
+      - ./apps/web/src:/app/apps/web/src
+    mem_limit: 300m
+    networks:
+      - tablero-network
+
+  # ─── Auth Service ─────────────────────────────────────────────────────────────
+  auth-service:
+    build:
+      context: .
+      dockerfile: services/auth-service/Dockerfile
+    container_name: tablero-auth
+    environment:
+      - NODE_ENV=development
+      - PORT=4001
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-tablero}:${POSTGRES_PASSWORD:-tablero_secret}@postgres:5432/${POSTGRES_DB:-tablero_pro}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    mem_limit: 150m
+    networks:
+      - tablero-network
+
+  # ─── Projects Service ─────────────────────────────────────────────────────────
+  projects-service:
+    build:
+      context: .
+      dockerfile: services/projects-service/Dockerfile
+    container_name: tablero-projects
+    environment:
+      - NODE_ENV=development
+      - PORT=4002
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-tablero}:${POSTGRES_PASSWORD:-tablero_secret}@postgres:5432/${POSTGRES_DB:-tablero_pro}
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    mem_limit: 150m
+    networks:
+      - tablero-network
+
+  # ─── Tasks Service ────────────────────────────────────────────────────────────
+  tasks-service:
+    build:
+      context: .
+      dockerfile: services/tasks-service/Dockerfile
+    container_name: tablero-tasks
+    environment:
+      - NODE_ENV=development
+      - PORT=4003
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-tablero}:${POSTGRES_PASSWORD:-tablero_secret}@postgres:5432/${POSTGRES_DB:-tablero_pro}
+      - JWT_SECRET=${JWT_SECRET}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    mem_limit: 150m
+    networks:
+      - tablero-network
+
+  # ─── Notifications Service ────────────────────────────────────────────────────
+  notifications-service:
+    build:
+      context: .
+      dockerfile: services/notifications-service/Dockerfile
+    container_name: tablero-notifications
+    environment:
+      - NODE_ENV=development
+      - PORT=4004
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-tablero}:${POSTGRES_PASSWORD:-tablero_secret}@postgres:5432/${POSTGRES_DB:-tablero_pro}
+      - JWT_SECRET=${JWT_SECRET}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_SES_FROM_EMAIL=${AWS_SES_FROM_EMAIL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    mem_limit: 150m
+    networks:
+      - tablero-network
+
+networks:
+  tablero-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
