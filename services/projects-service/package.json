@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "@tablero-pro/projects-service",
   "version": "0.1.0",
   "private": true,
@@ -10,8 +10,8 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@tablero-pro/database": "workspace:*",
-    "@tablero-pro/types": "workspace:*",
+    "@tablero-pro/database": "*",
+    "@tablero-pro/types": "*",
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "express-rate-limit": "^7.4.1",
