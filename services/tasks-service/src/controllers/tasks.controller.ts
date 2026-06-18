@@ -43,7 +43,7 @@ export const tasksController = {
 
   async eliminar(req: Request, res: Response) {
     try {
-      await tasksService.eliminar(req.params.id);
+      await tasksService.eliminar(req.params.id, req.user!.sub);
       res.status(200).json({ success: true, message: 'Tarea eliminada' });
     } catch (error) {
       const mensaje = error instanceof Error ? error.message : 'Error al eliminar tarea';

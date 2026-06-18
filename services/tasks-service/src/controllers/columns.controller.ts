@@ -2,13 +2,29 @@ import { Request, Response } from 'express';
 import { columnsService } from '../services/columns.service';
 
 export const columnsController = {
+  async listar(req: Request, res: Response) {
+    try {
+      const { projectId } = req.query;
+      if (!projectId || typeof projectId !== 'string') {
+        res.status(400).json({ success: false, error: 'projectId requerido' });
+        return;
+      }
+      const columnas = await columnsService.listar(projectId);
+      res.status(200).json({ success: true, data: columnas });
+    } catch (error) {
+      const mensaje = error instanceof Error ? error.message : 'Error al listar columnas';
+      res.status(500).json({ success: false, error: mensaje });
+    }
+  },
+
   async crear(req: Request, res: Response) {
     try {
-      const columna = await columnsService.crear(req.body);
+      const columna = await columnsService.crear(req.body, req.user!.sub);
       res.status(201).json({ success: true, data: columna });
     } catch (error) {
       const mensaje = error instanceof Error ? error.message : 'Error al crear columna';
-      res.status(500).json({ success: false, error: mensaje });
+      const status = mensaje.includes('administradores') ? 403 : 500;
+      res.status(status).json({ success: false, error: mensaje });
     }
   },
 
@@ -24,21 +40,23 @@ export const columnsController = {
 
   async actualizar(req: Request, res: Response) {
     try {
-      const columna = await columnsService.actualizar(req.params.id, req.body.name);
+      const columna = await columnsService.actualizar(req.params.id, req.body.name, req.user!.sub);
       res.status(200).json({ success: true, data: columna });
     } catch (error) {
       const mensaje = error instanceof Error ? error.message : 'Error al actualizar columna';
-      res.status(500).json({ success: false, error: mensaje });
+      const status = mensaje.includes('administradores') ? 403 : 500;
+      res.status(status).json({ success: false, error: mensaje });
     }
   },
 
   async eliminar(req: Request, res: Response) {
     try {
-      await columnsService.eliminar(req.params.id);
+      await columnsService.eliminar(req.params.id, req.user!.sub);
       res.status(200).json({ success: true, message: 'Columna eliminada' });
     } catch (error) {
       const mensaje = error instanceof Error ? error.message : 'Error al eliminar columna';
-      res.status(500).json({ success: false, error: mensaje });
+      const status = mensaje.includes('administradores') ? 403 : 500;
+      res.status(status).json({ success: false, error: mensaje });
     }
   },
 };

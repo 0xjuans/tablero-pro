@@ -19,6 +19,12 @@ export const invitarMiembroSchema = z.object({
   role: z.enum(['ADMIN', 'MEMBER', 'VIEWER']).default('MEMBER'),
 });
 
+// Agrega a un usuario existente directamente como miembro (sin invitación)
+export const agregarMiembroSchema = z.object({
+  email: z.string().email('El email no es válido'),
+  role: z.enum(['ADMIN', 'MEMBER', 'VIEWER']).default('MEMBER'),
+});
+
 // ─── Project ──────────────────────────────────────────────────────────────────
 
 export const crearProyectoSchema = z.object({
@@ -37,5 +43,6 @@ export const actualizarProyectoSchema = z.object({
 export type CrearWorkspaceInput = z.infer<typeof crearWorkspaceSchema>;
 export type ActualizarWorkspaceInput = z.infer<typeof actualizarWorkspaceSchema>;
 export type InvitarMiembroInput = z.infer<typeof invitarMiembroSchema>;
+export type AgregarMiembroInput = z.infer<typeof agregarMiembroSchema>;
 export type CrearProyectoInput = z.infer<typeof crearProyectoSchema>;
 export type ActualizarProyectoInput = z.infer<typeof actualizarProyectoSchema>;

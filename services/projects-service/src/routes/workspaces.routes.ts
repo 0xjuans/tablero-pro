@@ -4,6 +4,7 @@ import { authenticate } from '../middlewares/authenticate';
 import { validate } from '../middlewares/validate';
 import {
   actualizarWorkspaceSchema,
+  agregarMiembroSchema,
   crearWorkspaceSchema,
   invitarMiembroSchema,
 } from '../schemas/projects.schemas';
@@ -121,6 +122,9 @@ router.delete('/:id', workspacesController.eliminar);
  *       403:
  *         description: Sin permisos
  */
+router.get('/:id/members', workspacesController.listarMiembros);
+// Agrega a un usuario ya registrado directamente (sin flujo de invitación por email)
+router.post('/:id/members', validate(agregarMiembroSchema), workspacesController.agregarMiembro);
 router.post('/:id/invite', validate(invitarMiembroSchema), workspacesController.invitarMiembro);
 
 export default router;

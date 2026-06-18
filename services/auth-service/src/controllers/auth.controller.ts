@@ -62,6 +62,15 @@ export const authController = {
     }
   },
 
+  async listarUsuarios(req: Request, res: Response) {
+    try {
+      const usuarios = await authService.listarUsuarios();
+      res.status(200).json({ success: true, data: usuarios });
+    } catch (_error) {
+      res.status(500).json({ success: false, error: 'Error al listar usuarios' });
+    }
+  },
+
   async logout(req: Request, res: Response) {
     try {
       const { refreshToken } = req.body;

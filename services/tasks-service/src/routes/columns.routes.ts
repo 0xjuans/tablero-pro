@@ -14,6 +14,7 @@ router.use(authenticate);
  *   description: Gestión de columnas del tablero Kanban
  */
 
+router.get('/', columnsController.listar);
 router.post('/', validate(crearColumnaSchema), columnsController.crear);
 router.patch('/:id', columnsController.actualizar);
 router.delete('/:id', columnsController.eliminar);

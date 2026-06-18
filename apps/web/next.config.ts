@@ -18,7 +18,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "font-src 'self'",
-      "connect-src 'self'",
+      "connect-src 'self' http://localhost:*",
       "frame-ancestors 'none'",
     ].join('; '),
   },
@@ -26,24 +26,24 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   async headers() {
+    return [{ source: '/(.*)', headers: securityHeaders }];
+  },
+  async rewrites() {
+    if (process.env.NODE_ENV !== 'development') return [];
     return [
-      {
-        source: '/(.*)',
-        headers: securityHeaders,
-      },
+      { source: '/api/auth/login', destination: 'http://localhost:4001/login' },
+      { source: '/api/auth/register', destination: 'http://localhost:4001/register' },
+      { source: '/api/auth/users', destination: 'http://localhost:4001/users' },
+      { source: '/api/auth/refresh', destination: 'http://localhost:4001/refresh' },
+      { source: '/api/projects/:path*', destination: 'http://localhost:4002/:path*' },
+      { source: '/api/tasks/:path*', destination: 'http://localhost:4003/:path*' },
+      { source: '/api/notifications/:path*', destination: 'http://localhost:4004/:path*' },
     ];
   },
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**.amazonaws.com',
-      },
-    ],
+    remotePatterns: [{ protocol: 'https', hostname: '**.amazonaws.com' }],
   },
-  experimental: {
-    typedRoutes: true,
-  },
+  typedRoutes: true,
 };
 
 export default nextConfig;

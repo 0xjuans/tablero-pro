@@ -129,6 +129,14 @@ export const authService = {
     return tokens;
   },
 
+  // Lista todos los usuarios registrados (sin datos sensibles)
+  async listarUsuarios() {
+    return prisma.user.findMany({
+      select: { id: true, name: true, email: true, avatarUrl: true, createdAt: true },
+      orderBy: { name: 'asc' },
+    });
+  },
+
   // Invalida el refresh token para que no pueda usarse más
   async logout(refreshToken: string) {
     await prisma.refreshToken.deleteMany({ where: { token: refreshToken } });

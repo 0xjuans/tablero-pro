@@ -41,12 +41,18 @@ export const projectsService = {
   },
 
   async listarPorWorkspace(workspaceId: string, userId: string) {
-    // Solo mostramos proyectos donde el usuario es miembro
+    // Verificamos que el usuario sea miembro del workspace
+    const miembroWs = await prisma.workspaceMember.findUnique({
+      where: { workspaceId_userId: { workspaceId, userId } },
+    });
+
+    if (!miembroWs) {
+      throw new Error('No tienes acceso a este workspace');
+    }
+
+    // Todos los miembros del workspace pueden ver todos sus proyectos
     return prisma.project.findMany({
-      where: {
-        workspaceId,
-        members: { some: { userId } },
-      },
+      where: { workspaceId },
       include: {
         _count: { select: { tasks: true, members: true } },
         members: {
@@ -59,12 +65,25 @@ export const projectsService = {
   },
 
   async obtenerPorId(projectId: string, userId: string) {
+    // Si no es ProjectMember todavía, verificamos si es miembro del workspace y lo agregamos
     const miembro = await prisma.projectMember.findUnique({
       where: { projectId_userId: { projectId, userId } },
     });
 
     if (!miembro) {
-      throw new Error('No tienes acceso a este proyecto');
+      const proyecto = await prisma.project.findUnique({ where: { id: projectId } });
+      if (!proyecto) throw new Error('Proyecto no encontrado');
+
+      const miembroWs = await prisma.workspaceMember.findUnique({
+        where: { workspaceId_userId: { workspaceId: proyecto.workspaceId, userId } },
+      });
+
+      if (!miembroWs) throw new Error('No tienes acceso a este proyecto');
+
+      // Auto-inscribir al miembro del workspace como ProjectMember
+      await prisma.projectMember.create({
+        data: { projectId, userId, role: 'MEMBER' },
+      });
     }
 
     return prisma.project.findUniqueOrThrow({

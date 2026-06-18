@@ -1,6 +1,7 @@
 import { prisma, Prisma } from '@tablero-pro/database';
 import type {
   ActualizarWorkspaceInput,
+  AgregarMiembroInput,
   CrearWorkspaceInput,
   InvitarMiembroInput,
 } from '../schemas/projects.schemas';
@@ -83,6 +84,38 @@ export const workspacesService = {
     // Solo el OWNER puede eliminar el workspace
     await verificarRol(workspaceId, userId, ['OWNER']);
     await prisma.workspace.delete({ where: { id: workspaceId } });
+  },
+
+  // Agrega a un usuario ya registrado directamente como miembro del workspace
+  async agregarMiembroDirecto(workspaceId: string, data: AgregarMiembroInput, adminId: string) {
+    await verificarRol(workspaceId, adminId, ['OWNER', 'ADMIN']);
+
+    const usuario = await prisma.user.findUnique({ where: { email: data.email } });
+    if (!usuario) {
+      throw new Error(`No existe un usuario con el email ${data.email}`);
+    }
+
+    // Si ya es miembro, actualizamos su rol en lugar de duplicarlo
+    const miembroExistente = await prisma.workspaceMember.findUnique({
+      where: { workspaceId_userId: { workspaceId, userId: usuario.id } },
+    });
+
+    if (miembroExistente) {
+      return prisma.workspaceMember.update({
+        where: { workspaceId_userId: { workspaceId, userId: usuario.id } },
+        data: { role: data.role as 'ADMIN' | 'MEMBER' | 'VIEWER' },
+        include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
+      });
+    }
+
+    return prisma.workspaceMember.create({
+      data: {
+        workspaceId,
+        userId: usuario.id,
+        role: data.role as 'ADMIN' | 'MEMBER' | 'VIEWER',
+      },
+      include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
+    });
   },
 
   async invitarMiembro(workspaceId: string, data: InvitarMiembroInput, userId: string) {

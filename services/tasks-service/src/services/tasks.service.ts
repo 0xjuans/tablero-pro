@@ -9,8 +9,32 @@ import type {
   SolicitarUploadInput,
 } from '../schemas/tasks.schemas';
 
+// Obtiene el rol del usuario en el workspace dueño del proyecto dado
+async function obtenerRolEnProyecto(projectId: string, userId: string) {
+  const proyecto = await prisma.project.findUnique({
+    where: { id: projectId },
+    select: { workspaceId: true },
+  });
+  if (!proyecto) throw new Error('Proyecto no encontrado');
+  const miembro = await prisma.workspaceMember.findUnique({
+    where: { workspaceId_userId: { workspaceId: proyecto.workspaceId, userId } },
+    select: { role: true },
+  });
+  return miembro?.role ?? null;
+}
+
+// Lanza error si el usuario es VIEWER o no es miembro
+async function exigirEscritor(projectId: string, userId: string) {
+  const rol = await obtenerRolEnProyecto(projectId, userId);
+  if (!rol || rol === 'VIEWER') {
+    throw new Error('No tienes permisos para realizar esta acción');
+  }
+}
+
 export const tasksService = {
   async crear(data: CrearTareaInput, userId: string) {
+    await exigirEscritor(data.projectId, userId);
+
     // Calculamos el order de la nueva tarea: va al final de la columna
     const ultimaTarea = await prisma.task.findFirst({
       where: { columnId: data.columnId },
@@ -59,6 +83,12 @@ export const tasksService = {
   },
 
   async actualizar(taskId: string, data: ActualizarTareaInput, userId: string) {
+    const tareaExistente = await prisma.task.findUniqueOrThrow({
+      where: { id: taskId },
+      select: { projectId: true, assigneeId: true, title: true },
+    });
+    await exigirEscritor(tareaExistente.projectId, userId);
+
     const tarea = await prisma.task.update({
       where: { id: taskId },
       data: {
@@ -72,6 +102,20 @@ export const tasksService = {
       },
     });
 
+    // Crear notificación si se asignó la tarea a alguien nuevo
+    const nuevoAsignado = data.assigneeId;
+    if (nuevoAsignado && nuevoAsignado !== tareaExistente.assigneeId) {
+      await prisma.notification.create({
+        data: {
+          userId: nuevoAsignado,
+          type: 'TASK_ASSIGNED',
+          title: 'Se te asignó una tarea',
+          body: tareaExistente.title,
+          metadata: { taskId },
+        },
+      });
+    }
+
     sseService.emitir(tarea.projectId, {
       type: 'task.updated',
       payload: { ...tarea, updatedBy: userId },
@@ -81,9 +125,13 @@ export const tasksService = {
     return tarea;
   },
 
-  // Mueve una tarea a otra columna o la reordena dentro de la misma.
-  // Este es el corazón del drag & drop del Kanban.
   async mover(taskId: string, data: MoverTareaInput, userId: string) {
+    const tareaExistente = await prisma.task.findUniqueOrThrow({
+      where: { id: taskId },
+      select: { projectId: true },
+    });
+    await exigirEscritor(tareaExistente.projectId, userId);
+
     return prisma.$transaction(async (tx) => {
       const tareaActual = await tx.task.findUniqueOrThrow({ where: { id: taskId } });
 
@@ -131,11 +179,12 @@ export const tasksService = {
     });
   },
 
-  async eliminar(taskId: string) {
+  async eliminar(taskId: string, userId: string) {
     const tarea = await prisma.task.findUniqueOrThrow({
       where: { id: taskId },
       include: { attachments: true },
     });
+    await exigirEscritor(tarea.projectId, userId);
 
     // Eliminamos los archivos de S3 antes de borrar la tarea de la DB
     await Promise.all(tarea.attachments.map((a) => s3Service.eliminarArchivo(a.s3Key)));

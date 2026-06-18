@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authController } from '../controllers/auth.controller';
+import { authenticate } from '../middlewares/authenticate';
 import { validate } from '../middlewares/validate';
 import { loginSchema, refreshTokenSchema, registerSchema } from '../schemas/auth.schemas';
 
@@ -116,5 +117,8 @@ router.post('/refresh', validate(refreshTokenSchema), authController.refresh);
  *         description: Sesión cerrada exitosamente
  */
 router.post('/logout', validate(refreshTokenSchema), authController.logout);
+
+// Lista todos los usuarios registrados (requiere autenticación)
+router.get('/users', authenticate, authController.listarUsuarios);
 
 export default router;

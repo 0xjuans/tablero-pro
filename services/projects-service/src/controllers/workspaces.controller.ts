@@ -56,6 +56,38 @@ export const workspacesController = {
     }
   },
 
+  async listarMiembros(req: Request, res: Response) {
+    try {
+      const workspace = await workspacesService.obtenerPorId(req.params.id, req.user!.sub);
+      const miembros = workspace.members.map((m) => ({
+        id: m.user.id,
+        name: m.user.name,
+        email: m.user.email,
+        avatarUrl: m.user.avatarUrl,
+        role: m.role,
+      }));
+      res.status(200).json({ success: true, data: miembros });
+    } catch (error) {
+      const mensaje = error instanceof Error ? error.message : 'Error al listar miembros';
+      res.status(500).json({ success: false, error: mensaje });
+    }
+  },
+
+  async agregarMiembro(req: Request, res: Response) {
+    try {
+      const miembro = await workspacesService.agregarMiembroDirecto(
+        req.params.id,
+        req.body,
+        req.user!.sub
+      );
+      res.status(201).json({ success: true, data: miembro });
+    } catch (error) {
+      const mensaje = error instanceof Error ? error.message : 'Error al agregar miembro';
+      const status = mensaje.includes('permisos') ? 403 : mensaje.includes('No existe') ? 404 : 500;
+      res.status(status).json({ success: false, error: mensaje });
+    }
+  },
+
   async invitarMiembro(req: Request, res: Response) {
     try {
       const invitacion = await workspacesService.invitarMiembro(
