@@ -39,8 +39,8 @@ app.get('/health', (_req, res) => {
   res.status(200).json({
     status: 'ok',
     service: 'tasks-service',
-    // Incluimos las conexiones activas para facilitar el monitoreo
     sseConnections: sseService.totalConexiones(),
+    sseByProject: sseService.desglose(),
   });
 });
 
