@@ -6,8 +6,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/web/package.json ./apps/web/
 COPY packages/types/package.json ./packages/types/
-ENV HUSKY=0
-RUN npm ci --workspace=@tablero-pro/web --workspace=@tablero-pro/types
+RUN npm ci --ignore-scripts --workspace=@tablero-pro/web --workspace=@tablero-pro/types
 
 FROM base AS builder
 WORKDIR /app

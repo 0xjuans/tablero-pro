@@ -7,8 +7,7 @@ COPY package.json package-lock.json ./
 COPY services/tasks-service/package.json ./services/tasks-service/
 COPY packages/types/package.json ./packages/types/
 COPY packages/database/package.json ./packages/database/
-ENV HUSKY=0
-RUN npm ci --workspace=@tablero-pro/tasks-service --workspace=@tablero-pro/types --workspace=@tablero-pro/database
+RUN npm ci --ignore-scripts --workspace=@tablero-pro/tasks-service --workspace=@tablero-pro/types --workspace=@tablero-pro/database
 
 FROM base AS builder
 WORKDIR /app
