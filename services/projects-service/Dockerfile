@@ -4,12 +4,11 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 COPY package.json package-lock.json ./
-COPY services/auth-service/package.json ./services/auth-service/
 COPY services/projects-service/package.json ./services/projects-service/
 COPY packages/types/package.json ./packages/types/
 COPY packages/database/package.json ./packages/database/
 COPY packages/database/prisma ./packages/database/prisma
-RUN npm ci --ignore-scripts --workspace=@tablero-pro/auth-service --workspace=@tablero-pro/projects-service --workspace=@tablero-pro/types --workspace=@tablero-pro/database
+RUN npm ci --ignore-scripts --workspace=@tablero-pro/projects-service --workspace=@tablero-pro/types --workspace=@tablero-pro/database
 RUN npx prisma generate --schema=packages/database/prisma/schema.prisma
 
 FROM base AS builder
