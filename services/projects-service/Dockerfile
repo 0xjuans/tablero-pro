@@ -7,7 +7,9 @@ COPY package.json package-lock.json ./
 COPY services/projects-service/package.json ./services/projects-service/
 COPY packages/types/package.json ./packages/types/
 COPY packages/database/package.json ./packages/database/
+COPY packages/database/prisma ./packages/database/prisma
 RUN npm ci --ignore-scripts --workspace=@tablero-pro/projects-service --workspace=@tablero-pro/types --workspace=@tablero-pro/database
+RUN npx prisma generate --schema=packages/database/prisma/schema.prisma
 
 FROM base AS builder
 WORKDIR /app

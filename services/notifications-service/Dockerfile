@@ -7,7 +7,9 @@ COPY package.json package-lock.json ./
 COPY services/notifications-service/package.json ./services/notifications-service/
 COPY packages/types/package.json ./packages/types/
 COPY packages/database/package.json ./packages/database/
+COPY packages/database/prisma ./packages/database/prisma
 RUN npm ci --ignore-scripts --workspace=@tablero-pro/notifications-service --workspace=@tablero-pro/types --workspace=@tablero-pro/database
+RUN npx prisma generate --schema=packages/database/prisma/schema.prisma
 
 FROM base AS builder
 WORKDIR /app
