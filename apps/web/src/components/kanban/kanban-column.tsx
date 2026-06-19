@@ -6,14 +6,26 @@ import { useState } from 'react';
 import type { ColumnDto, TaskDto } from '@/lib/api/tasks.api';
 import { TaskCard } from './task-card';
 import { Button } from '@/components/ui/button';
-import { Plus, MoreHorizontal } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Plus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Props {
   column: ColumnDto;
   onCrearTarea: (columnId: string, title: string) => void;
   onOpenDetail: (task: TaskDto) => void;
+  onEliminarColumna: (columnId: string) => void;
   canWrite: boolean;
+  canAdmin: boolean;
 }
 
 const HEADER_COLORS: Record<number, string> = {
@@ -24,10 +36,18 @@ const HEADER_COLORS: Record<number, string> = {
   4: 'hsl(343 87% 55%)',
 };
 
-export function KanbanColumn({ column, onCrearTarea, onOpenDetail, canWrite }: Props) {
+export function KanbanColumn({
+  column,
+  onCrearTarea,
+  onOpenDetail,
+  onEliminarColumna,
+  canWrite,
+  canAdmin,
+}: Props) {
   const { setNodeRef, isOver } = useDroppable({ id: column.id });
   const [creando, setCreando] = useState(false);
   const [titulo, setTitulo] = useState('');
+  const [confirmarEliminar, setConfirmarEliminar] = useState(false);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter' && titulo.trim()) {
@@ -42,9 +62,10 @@ export function KanbanColumn({ column, onCrearTarea, onOpenDetail, canWrite }: P
   }
 
   const dotColor = HEADER_COLORS[column.order % 5] ?? 'hsl(240 5% 65%)';
+  const tareaCount = column.tasks.length;
 
   return (
-    <div className="flex flex-col w-[280px] shrink-0">
+    <div className="group/col flex flex-col w-[280px] shrink-0">
       {/* Cabecera */}
       <div className="flex items-center justify-between mb-2 px-1">
         <div className="flex items-center gap-2">
@@ -54,7 +75,7 @@ export function KanbanColumn({ column, onCrearTarea, onOpenDetail, canWrite }: P
           />
           <span className="text-sm font-semibold text-foreground">{column.name}</span>
           <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5 font-medium">
-            {column.tasks.length}
+            {tareaCount}
           </span>
         </div>
         <div className="flex items-center gap-1">
@@ -66,9 +87,16 @@ export function KanbanColumn({ column, onCrearTarea, onOpenDetail, canWrite }: P
               <Plus className="w-3.5 h-3.5" />
             </button>
           )}
-          <button className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-            <MoreHorizontal className="w-3.5 h-3.5" />
-          </button>
+
+          {/* Icono de basura — aparece al hacer hover sobre la columna, solo para admins */}
+          {canAdmin && (
+            <button
+              onClick={() => setConfirmarEliminar(true)}
+              className="w-6 h-6 rounded flex items-center justify-center text-destructive/0 group-hover/col:text-destructive/50 hover:!text-destructive hover:bg-destructive/10 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -137,6 +165,29 @@ export function KanbanColumn({ column, onCrearTarea, onOpenDetail, canWrite }: P
             </button>
           ))}
       </div>
+
+      {/* Diálogo de confirmación — acción destructiva */}
+      <AlertDialog open={confirmarEliminar} onOpenChange={setConfirmarEliminar}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar columna &quot;{column.name}&quot;?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {tareaCount > 0
+                ? `Esta acción eliminará la columna y sus ${tareaCount} tarea${tareaCount !== 1 ? 's' : ''}. No se puede deshacer.`
+                : 'Esta columna está vacía. La acción no se puede deshacer.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => onEliminarColumna(column.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Eliminar columna
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

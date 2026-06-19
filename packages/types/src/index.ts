@@ -145,6 +145,8 @@ export type SseEventType =
   | 'task.updated'
   | 'task.moved'
   | 'task.deleted'
+  | 'column.created'
+  | 'column.deleted'
   | 'comment.added'
   | 'notification.new';
 

@@ -10,6 +10,8 @@ interface KanbanState {
   agregarTarea: (columnId: string, tarea: TaskDto) => void;
   agregarColumna: (columna: ColumnDto) => void;
   actualizarTarea: (taskId: string, cambios: Partial<TaskDto>) => void;
+  eliminarTarea: (taskId: string) => void;
+  eliminarColumna: (columnId: string) => void;
 }
 
 export const useKanbanStore = create<KanbanState>((set) => ({
@@ -28,6 +30,19 @@ export const useKanbanStore = create<KanbanState>((set) => ({
         ...col,
         tasks: col.tasks.map((t) => (t.id === taskId ? { ...t, ...cambios } : t)),
       })),
+    })),
+
+  eliminarTarea: (taskId) =>
+    set((state) => ({
+      columnas: state.columnas.map((col) => ({
+        ...col,
+        tasks: col.tasks.filter((t) => t.id !== taskId),
+      })),
+    })),
+
+  eliminarColumna: (columnId) =>
+    set((state) => ({
+      columnas: state.columnas.filter((col) => col.id !== columnId),
     })),
 
   agregarTarea: (columnId, tarea) =>

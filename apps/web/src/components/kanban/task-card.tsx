@@ -2,15 +2,10 @@
 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useMutation } from '@tanstack/react-query';
 import type { TaskDto } from '@/lib/api/tasks.api';
-import { tasksApi } from '@/lib/api/tasks.api';
-import { useKanbanStore } from '@/store/kanban.store';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { MessageSquare, Paperclip, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-const PRIORIDADES: TaskDto['priority'][] = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
 
 const PRIORIDAD: Record<string, { label: string; badge: string }> = {
   LOW: { label: 'Baja', badge: 'bg-slate-100 text-slate-600 border border-slate-200' },
@@ -37,27 +32,9 @@ export function TaskCard({
   onOpenDetail?: (task: TaskDto) => void;
   canWrite?: boolean;
 }) {
-  const { actualizarTarea } = useKanbanStore();
-
   const { attributes, listeners, setNodeRef, transform, transition, isSorting } = useSortable({
     id: task.id,
   });
-
-  const cambiarPrioridad = useMutation({
-    mutationFn: (priority: TaskDto['priority']) => tasksApi.actualizarTarea(task.id, { priority }),
-    onMutate: (priority) => {
-      // Actualización optimista: cambia en pantalla antes de que responda el servidor
-      actualizarTarea(task.id, { priority });
-    },
-  });
-
-  function handlePrioridadClick(e: React.MouseEvent) {
-    e.stopPropagation();
-    if (!canWrite) return;
-    const idx = PRIORIDADES.indexOf(task.priority);
-    const siguiente = PRIORIDADES[(idx + 1) % PRIORIDADES.length];
-    cambiarPrioridad.mutate(siguiente);
-  }
 
   // Distinguir click de drag: solo abre el panel si el puntero no se movió
   function handleCardClick() {
@@ -93,6 +70,13 @@ export function TaskCard({
         />
         <p className="text-sm font-medium text-foreground leading-snug">{task.title}</p>
       </div>
+
+      {/* Descripción — máximo 2 líneas */}
+      {task.description && (
+        <p className="text-xs text-muted-foreground leading-relaxed mb-2 line-clamp-2">
+          {task.description}
+        </p>
+      )}
 
       {/* Tags */}
       {task.tags.length > 0 && (
@@ -133,18 +117,9 @@ export function TaskCard({
         </div>
 
         <div className="flex items-center gap-1.5">
-          {/* Badge clickeable para cambiar prioridad */}
-          <button
-            onClick={handlePrioridadClick}
-            title={canWrite ? 'Click para cambiar prioridad' : undefined}
-            className={cn(
-              'text-[10px] px-1.5 py-0.5 rounded-full font-medium transition-opacity',
-              canWrite ? 'hover:opacity-70 cursor-pointer' : 'cursor-default',
-              p.badge
-            )}
-          >
+          <span className={cn('text-[10px] px-1.5 py-0.5 rounded-full font-medium', p.badge)}>
             {p.label}
-          </button>
+          </span>
           {task.assignee && (
             <Avatar className="w-5 h-5">
               <AvatarFallback className="text-[9px] bg-primary/20 text-primary font-semibold">

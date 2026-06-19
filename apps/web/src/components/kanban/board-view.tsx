@@ -15,6 +15,7 @@ import { tasksApi, type TaskDto } from '@/lib/api/tasks.api';
 import { projectsApi } from '@/lib/api/projects.api';
 import { useKanbanStore } from '@/store/kanban.store';
 import { useWorkspaceRole, puedeEscribir, puedeAdministrar } from '@/hooks/useWorkspaceRole';
+import { useProjectSSE } from '@/hooks/useProjectSSE';
 import { KanbanColumn } from './kanban-column';
 import { TaskCard } from './task-card';
 import { TaskDetailPanel } from './task-detail-panel';
@@ -39,6 +40,7 @@ export function BoardView({ projectId }: { projectId: string }) {
     moverTarea,
     agregarTarea,
     agregarColumna,
+    eliminarColumna,
   } = useKanbanStore();
 
   const [tareaSeleccionada, setTareaSeleccionada] = useState<TaskDto | null>(null);
@@ -58,6 +60,9 @@ export function BoardView({ projectId }: { projectId: string }) {
 
   const workspaceId = proyecto?.workspaceId ?? '';
   const role = useWorkspaceRole(workspaceId);
+
+  // Escucha eventos SSE del proyecto para actualizar el tablero en tiempo real
+  useProjectSSE(projectId);
   const canWrite = puedeEscribir(role); // MEMBER, ADMIN, OWNER
   const canAdmin = puedeAdministrar(role); // ADMIN, OWNER
 
@@ -113,6 +118,15 @@ export function BoardView({ projectId }: { projectId: string }) {
 
   function handleCrearTarea(columnId: string, title: string) {
     crearTareaApi.mutate({ title, columnId, projectId });
+  }
+
+  const eliminarColumnaApi = useMutation({
+    mutationFn: tasksApi.eliminarColumna,
+    onMutate: (columnId) => eliminarColumna(columnId),
+  });
+
+  function handleEliminarColumna(columnId: string) {
+    eliminarColumnaApi.mutate(columnId);
   }
 
   function handleAbrirDialogColumna() {
@@ -182,7 +196,9 @@ export function BoardView({ projectId }: { projectId: string }) {
                   column={col}
                   onCrearTarea={handleCrearTarea}
                   onOpenDetail={setTareaSeleccionada}
+                  onEliminarColumna={handleEliminarColumna}
                   canWrite={canWrite}
+                  canAdmin={canAdmin}
                 />
               ))}
             </div>
@@ -229,6 +245,7 @@ export function BoardView({ projectId }: { projectId: string }) {
         task={tareaEnStore}
         workspaceId={workspaceId}
         canWrite={canWrite}
+        canAdmin={canAdmin}
         onClose={() => setTareaSeleccionada(null)}
       />
     </div>

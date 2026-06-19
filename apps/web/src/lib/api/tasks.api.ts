@@ -67,4 +67,12 @@ export const tasksApi = {
     const { data } = await apiClient.patch(`/api/tasks/tasks/${taskId}`, payload);
     return data.data;
   },
+
+  async eliminarTarea(taskId: string): Promise<void> {
+    await apiClient.delete(`/api/tasks/tasks/${taskId}`);
+  },
+
+  async eliminarColumna(columnId: string): Promise<void> {
+    await apiClient.delete(`/api/tasks/columns/${columnId}`);
+  },
 };
