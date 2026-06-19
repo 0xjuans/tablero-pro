@@ -30,6 +30,9 @@ export const sseService = {
   // El formato SSE es: "data: <json>\n\n" — así lo espera el EventSource del navegador.
   emitir(projectId: string, evento: SseEvent) {
     const grupo = conexiones.get(projectId);
+    console.log(
+      `[SSE emitir] type=${evento.type} projectId=${projectId} conexiones=${grupo?.size ?? 0}`
+    );
     if (!grupo) return;
 
     const mensaje = `data: ${JSON.stringify(evento)}\n\n`;
@@ -49,5 +52,14 @@ export const sseService = {
     let total = 0;
     conexiones.forEach((grupo) => (total += grupo.size));
     return total;
+  },
+
+  // Retorna el desglose de conexiones por projectId (útil para debugging)
+  desglose(): Record<string, number> {
+    const resultado: Record<string, number> = {};
+    conexiones.forEach((grupo, projectId) => {
+      resultado[projectId] = grupo.size;
+    });
+    return resultado;
   },
 };
