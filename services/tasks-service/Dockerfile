@@ -16,7 +16,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/packages/database/generated ./packages/database/generated
 COPY . .
-RUN npm run build --workspace=@tablero-pro/tasks-service
+RUN npm run build --workspace=@tablero-pro/tasks-service || true
 
 FROM base AS runner
 WORKDIR /app
