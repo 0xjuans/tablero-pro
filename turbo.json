@@ -1,6 +1,27 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
+  "globalPassThroughEnv": [
+    "DATABASE_URL",
+    "JWT_SECRET",
+    "JWT_REFRESH_SECRET",
+    "AUTH_SECRET",
+    "AUTH_URL",
+    "NEXT_PUBLIC_APP_URL",
+    "GOOGLE_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET",
+    "AWS_REGION",
+    "AWS_ACCESS_KEY_ID",
+    "AWS_SECRET_ACCESS_KEY",
+    "AWS_S3_BUCKET_NAME",
+    "AWS_SES_FROM_EMAIL",
+    "PORT_AUTH",
+    "PORT_PROJECTS",
+    "PORT_TASKS",
+    "PORT_NOTIFICATIONS",
+    "SKIP_ENV_VALIDATION",
+    "NODE_ENV"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
