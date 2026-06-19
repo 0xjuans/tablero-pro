@@ -14,6 +14,7 @@ RUN npx prisma generate --schema=packages/database/prisma/schema.prisma
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/packages/database/generated ./packages/database/generated
 COPY . .
 RUN npm run build --workspace=@tablero-pro/auth-service
 

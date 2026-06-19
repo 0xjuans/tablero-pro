@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { ZodSchema, ZodError } from 'zod';
+import { ZodSchema } from 'zod';
 
 // El mismo middleware genérico de validación que usamos en auth-service
 export const validate =
@@ -7,7 +7,7 @@ export const validate =
     const result = schema.safeParse(req.body);
 
     if (!result.success) {
-      const errors = (result.error as ZodError).errors.map((e) => ({
+      const errors = result.error.issues.map((e) => ({
         campo: e.path.join('.'),
         mensaje: e.message,
       }));

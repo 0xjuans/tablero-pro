@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { ZodSchema, ZodError } from 'zod';
+import { ZodSchema } from 'zod';
 
 // Middleware genérico que valida el body del request contra cualquier schema de Zod.
 // Si la validación falla, responde con 400 y los errores detallados.
@@ -9,7 +9,7 @@ export const validate =
     const result = schema.safeParse(req.body);
 
     if (!result.success) {
-      const errors = (result.error as ZodError).errors.map((e) => ({
+      const errors = result.error.issues.map((e) => ({
         campo: e.path.join('.'),
         mensaje: e.message,
       }));
