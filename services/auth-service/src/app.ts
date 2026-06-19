@@ -33,6 +33,8 @@ const authLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  // En desarrollo se omite el rate limiter para loopback (tests automatizados)
+  skip: (req) => process.env.NODE_ENV !== 'production' && req.ip === '::1',
 });
 
 // Documentación Swagger disponible en /api-docs
