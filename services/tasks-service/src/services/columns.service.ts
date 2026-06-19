@@ -1,4 +1,5 @@
 import { prisma, Prisma } from '@tablero-pro/database';
+import { sseService } from './sse.service';
 import type { CrearColumnaInput } from '../schemas/tasks.schemas';
 
 // Solo OWNER y ADMIN pueden crear/editar/eliminar columnas
@@ -45,19 +46,26 @@ export const columnsService = {
 
   async crear(data: CrearColumnaInput, userId: string) {
     await exigirAdmin(data.projectId, userId);
-    // La nueva columna va al final del tablero
     const ultimaColumna = await prisma.column.findFirst({
       where: { projectId: data.projectId },
       orderBy: { order: 'desc' },
       select: { order: true },
     });
 
-    return prisma.column.create({
+    const columna = await prisma.column.create({
       data: {
         ...data,
         order: (ultimaColumna?.order ?? -1) + 1,
       },
     });
+
+    sseService.emitir(data.projectId, {
+      type: 'column.created',
+      payload: { ...columna, tasks: [], createdBy: userId },
+      projectId: data.projectId,
+    });
+
+    return columna;
   },
 
   // Reordena las columnas del tablero.
@@ -88,6 +96,12 @@ export const columnsService = {
       select: { projectId: true },
     });
     await exigirAdmin(col.projectId, userId);
-    return prisma.column.delete({ where: { id: columnId } });
+    await prisma.column.delete({ where: { id: columnId } });
+
+    sseService.emitir(col.projectId, {
+      type: 'column.deleted',
+      payload: { columnId, deletedBy: userId },
+      projectId: col.projectId,
+    });
   },
 };
