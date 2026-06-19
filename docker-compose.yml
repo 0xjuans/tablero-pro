@@ -4,13 +4,13 @@ services:
   # ─── Database (solo en desarrollo) ───────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
-    container_name: tablero-postgres
+    container_name: tablero-postgres-dev
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-tablero}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tablero_secret}
       POSTGRES_DB: ${POSTGRES_DB:-tablero_pro}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5434}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -45,11 +45,16 @@ services:
       dockerfile: apps/web/Dockerfile
     container_name: tablero-web
     environment:
-      - NODE_ENV=development
-      - NEXT_PUBLIC_APP_URL=http://localhost
-    volumes:
-      - ./apps/web/src:/app/apps/web/src
-    mem_limit: 300m
+      - NODE_ENV=${NODE_ENV:-development}
+      - NEXT_PUBLIC_APP_URL=${APP_URL:-http://localhost}
+      - AUTH_SERVICE_URL=http://auth-service:4001
+      - PROJECTS_SERVICE_URL=http://projects-service:4002
+      - TASKS_SERVICE_URL=http://tasks-service:4003
+      - NOTIFICATIONS_SERVICE_URL=http://notifications-service:4004
+      - NEXTAUTH_URL=${APP_URL:-http://localhost}
+      - NEXTAUTH_SECRET=${AUTH_SECRET}
+      - NEXT_PUBLIC_AUTH_SERVICE_URL=http://auth-service:4001
+    mem_limit: 400m
     networks:
       - tablero-network
 

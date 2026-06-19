@@ -92,7 +92,7 @@ export function useProjectSSE(projectId: string) {
 
     async function conectar() {
       try {
-        const sseUrl = `${process.env.NEXT_PUBLIC_TASKS_SERVICE_URL || 'http://localhost:4003'}/sse/${projectId}`;
+        const sseUrl = `/api/tasks/sse/${projectId}`;
         console.log('[SSE] Conectando a', sseUrl, '| userId:', userId);
         const res = await fetch(sseUrl, {
           headers: { Authorization: `Bearer ${token}` },

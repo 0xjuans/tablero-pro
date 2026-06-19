@@ -17,7 +17,8 @@ export async function GET(
   const { projectId } = await params;
 
   // Conectamos al tasks-service directamente (no hay buffering aquí)
-  const upstreamRes = await fetch(`http://localhost:4003/sse/${projectId}`, {
+  const tasksUrl = process.env.TASKS_SERVICE_URL || 'http://localhost:4003';
+  const upstreamRes = await fetch(`${tasksUrl}/sse/${projectId}`, {
     headers: {
       Authorization: `Bearer ${token}`,
       Accept: 'text/event-stream',
